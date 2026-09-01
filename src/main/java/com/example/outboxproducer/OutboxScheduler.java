@@ -1,9 +1,15 @@
 package com.example.outboxproducer;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.kafka.core.KafkaTemplate;import org.springframework.scheduling.annotation.Scheduled;import org.springframework.stereotype.Component;import org.springframework.transaction.annotation.Propagation;import org.springframework.transaction.annotation.Transactional;import java.util.List;
 
 @Component
 public class OutboxScheduler {
+
+    @Autowired
+    @Lazy
+    private OutboxScheduler outboxScheduler;
 
     private final OutboxEventRepository outboxRepo;
     private final KafkaTemplate<String, String> kafkaTemplate;
@@ -39,7 +45,7 @@ public class OutboxScheduler {
                 System.out.println("[" + threadName + "] SCHEDULER: Kafka повернула ACK для Outbox_ID: " + outbox.getId());
 
                 // Крок 3: Оновлюємо статус в окремій транзакції
-                updateStatusToProcessed(outbox.getId());
+                outboxScheduler.updateStatusToProcessed(outbox.getId());
                 System.out.println("[" + threadName + "] SCHEDULER: Статус в БД успішно змінено на PROCESSED для Outbox_ID: " + outbox.getId());
 
             } catch (Exception e) {
