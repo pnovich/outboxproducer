@@ -1,4 +1,5 @@
 package com.example.outboxproducer;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.kafka.core.KafkaTemplate;import org.springframework.scheduling.annotation.Scheduled;import org.springframework.stereotype.Component;import org.springframework.transaction.annotation.Propagation;import org.springframework.transaction.annotation.Transactional;import java.util.List;
 
 @Component
@@ -13,6 +14,11 @@ public class OutboxScheduler {
     }
 
     @Scheduled(fixedDelay = 5000) // Кожні 5 секунд
+    @SchedulerLock(
+            name = "outbox_processing_lock", // Унікальне ім'я локу в таблиці БД
+            lockAtMostFor = "4s", // Якщо сервіс упаде, лок автоматично зніметься через 4 секунди
+            lockAtLeastFor = "2s" // Навіть якщо метод виконається миттєво, тримати лок мінімум 2 секунди (захист від занадто частого смикання бази іншими серверами)
+    )
     public void processOutbox() {
         String threadName = Thread.currentThread().getName();
 
